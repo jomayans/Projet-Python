@@ -5,7 +5,7 @@
 #################################################################################
 
 PROJECT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-BUCKET = s3/yagnimo
+# BUCKET = s3/yagnimo
 PROFILE = default
 PROJECT_NAME = cine-insights
 PYTHON_INTERPRETER = python3

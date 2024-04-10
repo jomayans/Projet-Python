@@ -61,7 +61,3 @@ def select_first_element(x):
     
     if isinstance(x, list):
         return str(x[0])
-
-
-
-

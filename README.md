@@ -3,6 +3,29 @@ cine-insights
 
 Leverage data on movie to get valuable insights
 
+## Setup your environement
+* Create a virtual environment (recommended)
+```bash
+python -m venv .venv_cine
+```
+You can replace `.venv_cine` with a different name if you prefer.
+
+* Activate your virtual environment (recommended)
+  * For Windows
+    ```bash
+    .venv_cine\Scripts\activate
+    ```
+  * For Linux:
+    ```bash
+    source .venv_cine/bin/activate
+    ```
+
+* Install the dependencies
+```bash
+pip install -r requirements.txt
+```
+
+
 Project Organization
 ------------
 
