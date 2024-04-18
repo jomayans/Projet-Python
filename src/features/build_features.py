@@ -1,15 +1,34 @@
 
-
+import numpy as np
+import pandas as pd
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split  # sklearn.cross_validation in old versions
+from datetime import datetime
+from sklearn.compose import ColumnTransformer
+from sklearn.feature_extraction.text import HashingVectorizer
+from sklearn.base import BaseEstimator, TransformerMixin
 
-categorical = ['production_companies', 'production_countries', 'spoken_languages', 'Keywords']
+
+categorical = ['production_companies', 'production_countries', 'spoken_languages', 'keywords']
 cols_to_binerize = ['homepage', 'status', 'spoken_languages', 'Keywords']
-cols_to_count_values = ['production_countries', 'production_companies', 'spoken_languages', 'Keywords', 'cast', 'crew']
+cols_to_count_values = ['production_countries', 'production_companies', 'spoken_languages', 'keywords', 'cast', 'crew']
 # Formater la date pour obtenir le jour, le mois et l'année seulement
 today = datetime(2024, 4, 14)
-date_col="release_date"
-Cols_to_Remove=['Keywords', 'spoken_languages','homepage', 'production_countries','production_companies', 'release_date', 'poster_path', 'id', 'status','imdb_id', 'logRevenue', 'logBudget',"released"]
+date_col = "release_date"
+Cols_to_Remove = ['Keywords', 'spoken_languages','homepage', 'production_countries','production_companies', 'release_date', 'poster_path', 'id', 'status','imdb_id', 'logRevenue', 'logBudget',"released"]
+log_num_feats = ["budget", "popularity"]
+#num_feats = ["Duration"] # non requis, à explorer ultérieurement
+#cat_feats = ['belongs_to_collection', 'has_homepage', 'released']
+cat_feats = [ 'has_homepage','release_month','release_year']
 
+#encode_feats = genre_feature_name(df)
+
+hash_feats = ['production_countries_count', 'production_companies_count', 'spoken_languages_count','keyword_count']
+
+#hash_feats = ['production_countries_count', 'production_companies_count', 'spoken_languages_count',
+             #'keyword_count', 'cast_count', 'crew_count']
 
 
 
@@ -28,6 +47,7 @@ def shuffle_split(df, scale=0.25, target="revenue"):
 
     return (X_train, y_train), (X_test, y_test), (X_val, y_val)
 
+
 def Binarizer(df, cols_to_binarize):
     for col in cols_to_binarize:
         num_col_name = 'num_' + col
@@ -35,12 +55,10 @@ def Binarizer(df, cols_to_binarize):
         df.loc[pd.isnull(df[col]), num_col_name] = 0
 
         print("Binerization well done")
-    
 
-
-
-    
 # Définir la fonction count_strings
+
+
 def count_strings(s):
     """
     Cette fonction compte le nombre de sous-chaînes séparées par des virgules dans une chaîne donnée.
@@ -88,7 +106,6 @@ def monthfix(df,date_col=date_col,col_name="release_month"):
 
 
 
-from datetime import datetime
 
 def str_to_datetime(str_date, today):
     # Convertir la chaîne en objet datetime
@@ -120,12 +137,6 @@ class Log1pTransformer(BaseEstimator, TransformerMixin):
         return np.log1p(X)
     
 
-    
-
-
-
-
-
 # pipiline 
 
 def gender_preprocessing(df):
@@ -142,4 +153,96 @@ def gender_preprocessing(df):
     return X_all
 
 
-def pipeline(raw_df):
+def genre_feature_name(df):
+    cols = df.columns
+# Séquence à rechercher
+    sequence = 'genre_'
+
+# Filtrer les éléments de la liste qui commencent par la séquence
+    return [element for element in cols if element.startswith(sequence)]
+
+
+def log_pipeline():
+    log_pipe = Pipeline([
+        ('imputer', SimpleImputer(missing_values=np.nan, strategy='median')),
+        ('logger', Log1pTransformer()),
+        ('scaler', StandardScaler())
+    ])
+
+    return log_pipe
+
+
+def num_pipeline():
+    num_pipeline = Pipeline([
+        ('imputer', SimpleImputer(strategy='median')),
+        ('scaler', StandardScaler())
+    ])
+
+    return num_pipeline
+
+
+def date_pipeline():
+    date_pipeline = Pipeline([
+        ('imputer', SimpleImputer(missing_values=np.nan, strategy='median'))
+    ])
+
+    return date_pipeline
+
+
+def cat_pipeline():
+    cat_pipeline = Pipeline([
+        ('imputer', SimpleImputer(strategy='most_frequent')),
+        # Ajoutez d'autres étapes au besoin
+    ])
+
+    return cat_pipeline
+
+
+def encode_pipeline():
+    encode_pipeline = Pipeline([
+        ('imputer', SimpleImputer(strategy='most_frequent'))
+    ])
+
+    return encode_pipeline
+
+
+def hash_pipeline():
+    hash_pipeline = Pipeline([
+        ('imputer', SimpleImputer(strategy='most_frequent'))
+    ])
+
+    return hash_pipeline
+
+
+def preprocessing_pipeline(df):
+    # initialisation de variable
+    encode_feats = genre_feature_name(df)
+
+    # initialisation de transormation
+    log_pipe = log_pipeline()
+    cat_pipe = cat_pipeline()
+    hash_pipe = hash_pipeline()
+    encode_pipe = encode_pipeline()
+
+    # Appliquer le pipeline de prétraitement et obtenir les données transformées
+    transformed_data = ColumnTransformer([
+        # Transformation des caractéristiques numériques avec log
+        ('log_num_feats', log_pipe, log_num_feats),
+        
+        # Transformation des caractéristiques catégorielles
+        ('cat_feats', cat_pipe, cat_feats),
+        
+        # Encodage des caractéristiques catégorielles
+        ('encode_feats', encode_pipe, encode_feats),
+        
+        ('hash_feats', hash_pipe, hash_feats)
+        # Ajoutez d'autres transformations au besoin
+    ], remainder='drop', n_jobs=-1).fit_transform(df)
+
+    # Créer un DataFrame à partir des données transformées
+    transformed_df = pd.DataFrame(transformed_data, columns=df.columns)
+
+    return transformed_df
+
+
+
