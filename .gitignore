@@ -93,3 +93,6 @@ target/
 
 # virtualenv
 *.venv*/
+*cine_insights*
+*cine*
+*insights*
