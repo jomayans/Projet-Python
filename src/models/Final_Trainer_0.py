@@ -7,6 +7,8 @@ from xgboost.sklearn import XGBRegressor
 from time import time
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import ParameterGrid
+
 import warnings
 from sklearn.metrics import make_scorer
 
@@ -19,7 +21,21 @@ from  Preprocess_trainData import *
 import Preprocessing_PredictedData
 from Preprocessing_PredictedData import *
 
+from sklearn.model_selection import ParameterGrid
+
+parameters_ = {
+            'objective': ['reg:squarederror'],
+            'learning_rate': [0.03, 0.05, 0.07],
+            'max_depth': [5, 6, 7],
+            'min_child_weight': [3, 4],
+            'subsample': [0.7, 0.8, 0.9],
+            'colsample_bytree': [0.7],
+            'n_estimators': [500, 1000, 2800]
+        }
+
+
 with_duration=False
+
 def get_clean_df(raw_df,with_duration):
     (x_train, y_train), (x_test, y_test), (x_val, y_val), ct = Preprocess_trainData.preprocessing_data(raw_df,with_duration=with_duration)
     return (x_train, y_train), (x_test, y_test), (x_val, y_val), ct
@@ -41,54 +57,50 @@ def mean_absolute_percentage_error(y_test, y_pred):
 
 
 class XGBRegressorWrapper:
-    def __init__(self, Raw_data,with_duration):
-        (X_train, y_train), (X_test, y_test), (x_val,y_val), ct = get_clean_df(Raw_data,with_duration)
+    def __init__(self, Raw_data, with_duration):
+        (X_train, y_train), (X_test, y_test), (x_val, y_val), ct = get_clean_df(Raw_data, with_duration)
         self.X_train = X_train
         self.y_train = y_train
         self.X_test = X_test
         self.y_test = y_test
         self.best_params_ = None
         self.model = None
-        self.ct_data_transformer = ct    # u attribut importnat lors de la prediction de nouvelle de données "
+        self.ct_data_transformer = ct  # un attribut important lors de la prédiction de nouvelles données
         self.train_time = None
         self.train_rmsle = None
         self.test_rmsle = None
         self.test_mape = None
+        self.param_Combination = list(ParameterGrid(parameters_))
 
         # Ignore all warnings
         warnings.filterwarnings('ignore')
 
-        self._train_model()
-    # 'silent': [1],
     def _train_model(self):
         start = time()
-        xgb = XGBRegressor()
-        parameters = {'objective': ['reg:squarederror'],
-                      'learning_rate': [0.03, 0.05, 0.07],
-                      'max_depth': [5, 6, 7],
-                      'min_child_weight': [3, 4],
-                      
-                      'subsample': [0.7, 0.8, 0.9],
-                      'colsample_bytree': [0.7],
-                      'n_estimators': [500, 1000, 2800]}
-
-        grid = GridSearchCV(xgb,
-                            parameters,
-                            cv=2,
-                            n_jobs=-1,
-                            verbose=True)
-
-        grid.fit(self.X_train, self.y_train)
-        self.best_params_ = grid.best_params_
-        self.model = grid.best_estimator_
+        xgb = XGBRegressor(**self.best_params_) if self.best_params_ else XGBRegressor()
+        xgb.fit(self.X_train, self.y_train)
+        self.model = xgb
         self.train_time = np.round(time() - start, 4)
-        self.train_rmsle = grid.best_score_
 
-        # Calculate metrics on test set
-        y_pred_test = self.model.predict(self.X_test)
-        self.test_rmsle = rmsle(y_pred_test, self.y_test)
-        self.test_mape = mean_absolute_percentage_error(self.y_test, y_pred_test)
+    def _evaluate_model(self, X, y):
+        y_pred = self.model.predict(X)
+        rmsle_score = rmsle(y, y_pred)
+        mape_score = mean_absolute_percentage_error(y, y_pred)
+        return rmsle_score, mape_score
 
+    def train_model(self, params):
+        xgb = XGBRegressor(**params)
+        xgb.fit(self.X_train, self.y_train)
+        self.model = xgb
+
+    def evaluate_model(self):
+        train_rmsle, _ = self._evaluate_model(self.X_train, self.y_train)
+        test_rmsle, test_mape = self._evaluate_model(self.X_test, self.y_test)
+        return {
+            "Training RMSLE": train_rmsle,
+            "Test RMSLE": test_rmsle,
+            "Test MAPE": test_mape
+        }
     def display_results(self):
         data = {
             "Best parameters": [self.best_params_],
@@ -102,9 +114,10 @@ class XGBRegressorWrapper:
     def save_best_model(self, filename):
         import joblib
         joblib.dump(self.model, filename)
-        return pd.DataFrame({"Message": ["Model saved successfully."]})
-    def predict_(self, X):
-        X_transform=Preprocessing_PredictedData.preprocessing_pipeline(X,self.ct_data_transformer,with_duration)
 
+    def predict_(self, X):
+        X_transform = Preprocessing_PredictedData.preprocessing_pipeline(X, self.ct_data_transformer, with_duration)
         return self.model.predict(X_transform)
-    
+
+    def predict(self, X):
+        return self.predict_(X)
