@@ -24,8 +24,8 @@ from Preprocess_predicted_data import *
 
 # data qui ne contient pas la colonne "revenue" et qui aprtagent les même colonnes que le dataset qu'AYMAN me fournira 
 
-filename_="X.csv" 
-path_='/home/onyxia/work/cine-insights/src/Mlflow_/'+filename_
+filename_="" 
+path_='../data+filename_
 
 
 

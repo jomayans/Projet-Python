@@ -1,9 +1,25 @@
 import mlflow
 import pandas as pd
 import pickle
+import src.features.preprocess_train_data
+import src.features.preprocessing_predicted_data
+import src.models.train_models
+import src.models.Evaluation
+import src.data.Import_data
 
-filename="evaluation_data.csv"
-path_file="/home/onyxia/work/cine-insights/src/data/"
+
+def load_data(in_path, name, n_display=1, show_info=False, nrows=None):
+    df = pd.read_parquet(in_path, nrows=nrows)
+    print(f"{name}: shape is {df.shape}")
+    df = df.rename(columns={"keywords": "Keywords"})
+
+    if show_info:
+        print(df.info())
+
+    if n_display > 0:
+        display.display(df.head(n_display))
+
+    return df
 
 import mlflow
 
