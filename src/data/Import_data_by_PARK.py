@@ -3,12 +3,7 @@ import IPython.display as display
 
 import boto3
 import pyarrow.parquet as pq
-# Exemple d'utilisation
-minio_url = 'URL_VERS_MINIO'
-access_key = 'VOTRE_ACCESS_KEY'
-secret_key = 'VOTRE_SECRET_KEY'
-bucket_name = 'NOM_DU_BUCKET'
-object_key = 'CHEMIN_VERS_LE_FICHIER_DANS_LE_BUCKET'
+
 
 def read_parquet_from_minio(minio_url, access_key, secret_key, bucket_name, object_key):
     # Connexion à MinIO
@@ -26,12 +21,4 @@ def read_parquet_from_minio(minio_url, access_key, secret_key, bucket_name, obje
 
 
 
-parquet_table = read_parquet_from_minio(minio_url, access_key, secret_key, bucket_name, object_key)
-if parquet_table is not None:
-    # Affichage des premières lignes du tableau Parquet
-    print(parquet_table.to_pandas().head())
 
-
-
-        
-    return df
