@@ -5,6 +5,9 @@ import pickle
 filename="evaluation_data.csv"
 path_file="/home/onyxia/work/cine-insights/src/data/"
 
+# Récupérer les données d'évaluations à partir de Minio
+
+
 import mlflow
 
 # Si une exécution est déjà active, terminer la précédente
