@@ -15,6 +15,10 @@ from xgboost import XGBRegressor
 
 import src.features.preprocess_train_data as Preprocess_trainData
 import src.features.preprocessing_predicted_data as Preprocessing_PredictedData
+import mlflow
+import pandas as pd
+import pickle
+import src.Mlflow_src.mlflow_log as mlog
 
 parameters_: Dict[str, List[Optional[float]]] = {
     "objective": ["reg:squarederror"],
@@ -219,3 +223,49 @@ def mean_absolute_percentage_error(y_test: np.ndarray, y_pred: np.ndarray) -> fl
 
 
 scorer = make_scorer(rmsle)
+
+
+
+
+" Entrainement"
+
+# 2_Init
+import yaml
+
+yaml_file_path = "mlflow_predict.yaml"
+
+
+# Charger le contenu du fichier YAML
+with open(yaml_file_path, "r") as yaml_file:
+    workflow = yaml.safe_load(yaml_file)
+
+# Extraire les valeurs des paramètres
+generateName = workflow["metadata"]["generateName"]
+entrypoint = workflow["spec"]["entrypoint"]
+container_args = workflow["spec"]["templates"][0]["container"]["args"]
+run_id = container_args[0].split("=")[1]
+link = container_args[1].split("=")[1] #ok
+model_name = container_args[2].split("=")[1]
+model_version = container_args[3].split("=")[1]
+image = workflow["spec"]["templates"][0]["container"]["image"]
+
+
+" Lien pour des données dans le minio"
+
+" charger les données  depuis minio par le lien "
+raw_data = pd.read_parquet(link)[50:]
+raw_data
+
+# Load model as a PyFuncModel.
+
+Experience_Name="Final_Experiment"
+# Instance notre classe de models
+models=XGBRegressorWrapper(raw_data,with_duration=False)
+
+num_app=1
+" Archirver nos entrainements sur Mlflow"
+import src.Mlflow_src.mlflow_log as mlog
+mlog.mlflow_fun(models,Experience_Name,num_app)
+
+
+

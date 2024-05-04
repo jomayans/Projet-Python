@@ -1,0 +1,88 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: BOX_OFFIce-training-workflow-
+spec:
+  entrypoint: main
+  arguments:
+    parameters:
+      # The MLflow tracking server is responsible to log the hyper-parameter and model metrics.
+      - name: mlflow-tracking-uri
+        value: https://user-odione-mlflow.user.lab.sspcloud.fr/
+      - name: mlflow-experiment-name
+        value: Final_Experiment
+      - name: model-training-conf-list
+        value: |
+          [{'colsample_bytree': 0.7,
+            'learning_rate': 0.03,
+            'max_depth': 5,
+            'min_child_weight': 3,
+            'n_estimators': 500,
+            'objective': 'reg:squarederror',
+            'subsample': 0.7},
+           {'colsample_bytree': 0.7,
+            'learning_rate': 0.03,
+            'max_depth': 5,
+            'min_child_weight': 3,
+            'n_estimators': 500,
+            'objective': 'reg:squarederror',
+            'subsample': 0.8},
+           {'colsample_bytree': 0.7,
+            'learning_rate': 0.03,
+            'max_depth': 5,
+            'min_child_weight': 3,
+            'n_estimators': 500,
+            'objective': 'reg:squarederror',
+            'subsample': 0.9},
+           {'colsample_bytree': 0.7,
+            'learning_rate': 0.03,
+            'max_depth': 5,
+            'min_child_weight': 3,
+            'n_estimators': 1000,
+            'objective': 'reg:squarederror',
+            'subsample': 0.8},
+           {'colsample_bytree': 0.7,
+            'learning_rate': 0.03,
+            'max_depth': 7,
+            'min_child_weight': 4,
+            'n_estimators': 2800,
+            'objective': 'reg:squarederror',
+            'subsample': 0.9}]
+  templates:
+    - name: main
+      dag:
+        tasks:
+          - name: start-pipeline
+            template: start-pipeline-wt
+          - name: train-model-with-params
+            dependencies: [ start-pipeline ]
+            template: run-model-training-wt
+            arguments:
+              parameters:
+                - name: conf
+                  value: "{{item}}"
+            withParam: "{{workflow.parameters.model-training-conf-list}}"
+    - name: start-pipeline-wt
+      inputs:
+        container:
+          image: busybox
+          command: [ sh, -c ]
+          args: [ "echo Starting pipeline" ]
+    - name: run-model-training-wt
+      inputs:
+        parameters:
+          - name: conf
+      container:
+        image: Yedson54/cine-insights:latest
+        imagePullPolicy: Always
+        command: [sh, -c]
+        args: ["mlflow run .
+                --env-manager=local
+                -P remote_server_uri=$MLFLOW_TRACKING_URI
+                -P experiment_name=$MLFLOW_EXPERIMENT_NAME
+                -P conf={{inputs.parameters.conf}}"]
+        env:
+          - name: MLFLOW_TRACKING_URI
+            value: "{{workflow.parameters.mlflow-tracking-uri}}"
+          - name: MLFLOW_EXPERIMENT_NAME
+            value: "{{workflow.parameters.mlflow-experiment-name}}"
