@@ -255,7 +255,7 @@ models = XGBRegressorWrapper(raw_data, with_duration=False)
 
 num_app = 1
 
-experiment_name = "Nouvelle_Experience_main5"
+experiment_name = "Nouvelle_Experience_main4"
 mlflow.create_experiment(experiment_name)
 
 # Sauvegarde du ct_transformer

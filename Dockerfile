@@ -6,7 +6,9 @@ RUN apt-get -y update && \
 # Install project dependencies
 COPY requirements.txt .
 RUN pip install -r requirements.txt
+RUN pip install -r my_requiremnet.txt 
+
 RUN pip install mlflow
 COPY main.py .
 COPY src ./src
-CMD ["python3", "script.py"]
+CMD ["python3", "main.py"]
