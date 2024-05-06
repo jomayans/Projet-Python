@@ -10,6 +10,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.preprocessing import MinMaxScaler
 
 
+
 # Colonnes spécifiques
 # Colonnes spécifiques
 cols_to_count_values = ["spoken_languages","production_countries","production_companies","Keywords"] # + cats +crew
@@ -129,7 +130,7 @@ def str_to_datetime(str_date, today):
     difference = today - date_reference
     return round(difference.total_seconds() / (3600 * 24), 5)
 
-def add_duration_col(df, with_duration=False, date_col="release_date"):
+def add_duration_col(df, with_duration=with_duration, date_col="release_date"):
     if with_duration:
         # Convertir la colonne date_col en chaînes de caractères (str)
         df[date_col] = df[date_col].astype(str)
@@ -160,7 +161,7 @@ def log_pipeline():
 
 def num_pipeline():
     num_pipeline = Pipeline([
-        ('imputer', SimpleImputer(strategy='median')),
+        ('imputer', SimpleImputer(missing_values=np.nan,strategy='median')),
         ('scaler', MinMaxScaler())
     ])
     return num_pipeline
@@ -173,19 +174,19 @@ def date_pipeline():
 
 def cat_pipeline():
     cat_pipeline = Pipeline([
-        ('imputer', SimpleImputer(strategy='most_frequent')),
+        ('imputer', SimpleImputer(missing_values=np.nan,strategy='most_frequent')),
     ])
     return cat_pipeline
 
 def encode_pipeline():
     encode_pipeline = Pipeline([
-        ('imputer', SimpleImputer(strategy='most_frequent'))
+        ('imputer', SimpleImputer(missing_values=np.nan,strategy='most_frequent'))
     ])
     return encode_pipeline
 
 def hash_pipeline():
     hash_pipeline = Pipeline([
-        ('imputer', SimpleImputer(strategy='most_frequent'))
+        ('imputer', SimpleImputer(missing_values=np.nan,strategy='most_frequent'))
     ])
     return hash_pipeline
     
@@ -216,7 +217,7 @@ def genre_column_names(all_cols):
       genre_column_names = [element for element in all_cols if element.startswith(sequence)]
       return list(genre_column_names)
 
-def preprocessing_pipeline(df):
+def preprocessing_pipeline(df,with_duration=with_duration):
     # Appliquer les transformations sur df
     big_df = change_name(df).copy()
     big_df = set_cols(big_df)
@@ -257,9 +258,10 @@ def preprocessing_pipeline(df):
         ('cat_feats', cat_pipe, cat_feats),
         ('hash_feats', hash_pipe, genre_feats+count_feats) #+ count_feats)
     ], remainder='passthrough').fit(X) 
+    
+    transformed_columns = log_num_feats + cat_feats + genre_feats + count_feats 
 
     # Obtenez les noms de colonnes transformées
-    transformed_columns = log_num_feats + cat_feats + genre_feats + count_feats # + num_feats if with_duration==True et si on decide de normaliser les durée
 
     # Obtenez les noms de colonnes non transformées
     remaining_columns = [col for col in X.columns if col not in transformed_columns]
@@ -267,7 +269,6 @@ def preprocessing_pipeline(df):
     # Combinez les deux listes de noms de colonnes
     all_columns = transformed_columns + remaining_columns
 
-    # Appliquez la transformation finale
     transformed_data = ct.transform(X)
 
     # Créez un DataFrame avec les données transformées et les noms de colonnes
@@ -289,8 +290,8 @@ def shuffle_split(X,y,scale=0.25):
 
     return (X_train, y_train), ( X_test, y_test),( X_val, y_val)
 
-def preprocessing_data(raw_data):
-    X ,Y,ct = preprocessing_pipeline(raw_data)
+def preprocessing_data(raw_data,with_duration=with_duration):
+    X ,Y,ct = preprocessing_pipeline(raw_data,with_duration)
     (X_train, y_train), ( X_test, y_test),( X_val, y_val)=shuffle_split(X,Y)
     return (X_train, y_train), ( X_test, y_test),( X_val, y_val),ct
 

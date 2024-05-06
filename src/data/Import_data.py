@@ -10,5 +10,7 @@ def load_data(in_path, name, n_display=1, show_info=False, sep=",", nrows=720000
         print(df.info())
     
     if n_display > 0:
-        display(df.head(n_display))
+        df.head(n_display)
+        
     return df
+
