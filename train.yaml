@@ -32,6 +32,5 @@ spec:
           pip install mlflow && \
           mkdir -p /home/cine_insights/src && \
           cp /src/main.py /home/cine_insights/src/main.py && \
-          cp /src/script.py /home/cine_insights/src/script.py && \
           cd /home/cine_insights && \
-          python3 script.py
+          python3 main.py

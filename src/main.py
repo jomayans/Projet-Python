@@ -13,7 +13,7 @@ from xgboost import XGBRegressor
 import mlflow
 import pandas as pd
 import pickle
-import src.Mlflow.mlflow_log as mlog
+import src.Mlflow_src.mlflow_log as mlog
 import src.features.preprocess_train_data as preprocess_train_data
 import src.features.preprocessing_predicted_data as preprocessing_predicted_data
 
@@ -255,7 +255,7 @@ models = XGBRegressorWrapper(raw_data, with_duration=False)
 
 num_app = 1
 
-experiment_name = "Final Experiement 06 mai version2"
+experiment_name = "Nouvelle_Experience_main4"
 mlflow.create_experiment(experiment_name)
 
 # Sauvegarde du ct_transformer
@@ -264,12 +264,17 @@ mlflow.log_artifact("ct_transformer.pkl")
 
 # Archivage des entraînements sur MLflow
 # Archivage des entraînements sur MLflow
-for params in models.param_Combination:
-    if mlflow.active_run():
-           mlflow.end_run()
-    with mlflow.start_run(experiment_id=mlflow.get_experiment_by_name(experiment_name).experiment_id):
-        models.train_model(params)
-        eval_metrics = models.evaluate_model()
-        mlflow.log_params(params)
-        mlflow.log_metrics(eval_metrics)
-        mlflow.sklearn.log_model(models.model, "xgboost_model")
+
+def make_new_experient(experiment_name=experiment_name+"_test"):
+    for params in models.param_Combination:
+        if mlflow.active_run():
+                 mlflow.end_run()
+        with mlflow.start_run(experiment_id=mlflow.get_experiment_by_name(experiment_name).experiment_id):
+            models.train_model(params)
+            eval_metrics = models.evaluate_model()
+            mlflow.log_params(params)
+            mlflow.log_metrics(eval_metrics)
+            mlflow.sklearn.log_model(models.model, "xgboost_model")
+    print("well done")
+
+    
