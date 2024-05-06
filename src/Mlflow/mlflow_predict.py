@@ -11,7 +11,7 @@ import pickle
 
 import yaml
 
-yaml_file_path = "../models/mlflow_predict.yaml"
+yaml_file_path = "mlflow_predict.yaml"
 
 
 with open(yaml_file_path, "r") as yaml_file:
@@ -34,9 +34,11 @@ data.shape
 
 loaded_model = mlflow.pyfunc.load_model(model_uri=f"models:/{model_name}/{model_version}")
 # Définir le répertoire local où vous souhaitez télécharger l'artefact
-local_dir = "../models/Download_Artefact"
+local_dir = "../data/Download_Artefact"
 
 # Télécharger l'artefact depuis MLflow
+mlflow_server_uri = "https://user-odione-mlflow.user.lab.sspcloud.fr"
+
 mlflow_client = mlflow.tracking.MlflowClient()
 mlflow_client.download_artifacts(run_id=run_id, path="ct_data_transformers", dst_path=local_dir)
 
@@ -46,7 +48,7 @@ with open(artifact_path, "rb") as f:
     ct_data_transformer = pickle.load(f)
 
 # Transformer les données afin d'avoir les  bonnes colonnes attendus par le modéle
-X_transform = Preprocessing_PredictedData.preprocessing_pipeline(data, ct_data_transformer, with_duration=False)
+X_transform = preprocessing_predicted_data.preprocessing_pipeline(data, ct_data_transformer, with_duration=False)
 # appliquer l'ensemble de pipeline necessaire comme celle dans l'entrainement
 transformed_data = ct_data_transformer.transform(X_transform)
 transformed_data = pd.DataFrame(transformed_data,columns=X_transform.columns)
