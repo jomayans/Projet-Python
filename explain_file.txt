@@ -1,0 +1,25 @@
+1) src/models/main
+ce script contient la fonction make_new_experience() qui prend en argument une chaîne de caractères qui va définir le nom d'une expérience et lancé 
+l'entrainement de notre model sur plusieurs combinaison des nos hyperparamètres en outres cette fonction va archiver chaque modèle et ses métadonnées associées
+tels que les metrics te le le transforlateur de notre pipeline dans mlflow
+voici comment , on pourrait l'utiliser si on se situe sur le dossier src
+python 
+import src.models.main as main
+mon_experience="my_exper"
+main.make_new_experience(my_exper)
+
+Le chargement des données et le preprocessing toutç a est pris en compte
+
+
+2)src/models/Predict
+Ce script contient la fonction predictor() qui prend  deux arguments :
+premier argument en entrée: les mêmes données que ceux obtenus lors de l'entrainment via
+data=pd_read_parquet(url)
+deuxième argument: c'est le nom d'un experience chargé depuis mlflow parmi les experiences qu'on a/archivera
+
+Avec ces arguments le modèles va faire le preprocessing des données d'entrèe puis rècuperer le meilleur modèle
+pour l'experience données et en fin fait les predictions.
+Voici un exemple  d'utilisation
+
+import src.models.Predict as Predict
+Predict(data,"experice)

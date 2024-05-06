@@ -264,12 +264,17 @@ mlflow.log_artifact("ct_transformer.pkl")
 
 # Archivage des entraînements sur MLflow
 # Archivage des entraînements sur MLflow
-for params in models.param_Combination:
-    if mlflow.active_run():
-           mlflow.end_run()
-    with mlflow.start_run(experiment_id=mlflow.get_experiment_by_name(experiment_name).experiment_id):
-        models.train_model(params)
-        eval_metrics = models.evaluate_model()
-        mlflow.log_params(params)
-        mlflow.log_metrics(eval_metrics)
-        mlflow.sklearn.log_model(models.model, "xgboost_model")
+
+def make_new_experient(experiment_name=experiment_name+"_test"):
+    for params in models.param_Combination:
+        if mlflow.active_run():
+                 mlflow.end_run()
+        with mlflow.start_run(experiment_id=mlflow.get_experiment_by_name(experiment_name).experiment_id):
+            models.train_model(params)
+            eval_metrics = models.evaluate_model()
+            mlflow.log_params(params)
+            mlflow.log_metrics(eval_metrics)
+            mlflow.sklearn.log_model(models.model, "xgboost_model")
+    print("well done")
+
+    

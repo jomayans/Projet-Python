@@ -10,7 +10,7 @@ spec:
       - name: mlflow-tracking-uri
         value: https://user-odione-mlflow.user.lab.sspcloud.fr/
       - name: mlflow-experiment-name
-        value: Final_Experiment
+        value: Final Experiement 06 mai version2
       - name: model-training-conf-list
         value: |
           [{'colsample_bytree': 0.7,

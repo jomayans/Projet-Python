@@ -11,6 +11,7 @@ spec:
       - --link=https://minio.lab.sspcloud.fr/alimane/diffusion/TMDB_movies.parquet
       - --model_name=F_best_model
       - --model_version=1
+      - --mlflow_server_uri=https://user-odione-mlflow.user.lab.sspcloud.fr
       command:
       - my-command
       image: docker-image
