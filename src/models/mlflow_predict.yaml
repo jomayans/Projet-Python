@@ -1,0 +1,17 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: my-workflow-
+spec:
+  entrypoint: my-entrypoint
+  templates:
+  - container:
+      args:
+      - --run_id=f09062b907e84531bb6e207f1a31bca5
+      - --link=https://minio.lab.sspcloud.fr/alimane/diffusion/TMDB_movies.parquet
+      - --model_name=F_best_model
+      - --model_version=1
+      command:
+      - my-command
+      image: docker-image
+    name: my-entrypoint

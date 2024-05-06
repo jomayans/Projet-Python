@@ -1,4 +1,7 @@
-# Importation des bibliothèques nécessaires
+"""Module to train the model and evaluate the model performance."""
+
+# pylint: disable=locally-disabled, multiple-statements, fixme, invalid-name, too-many-arguments, too-many-instance-attributes
+
 import warnings
 from time import time
 from typing import Dict, List, Optional, Tuple
@@ -10,14 +13,12 @@ from sklearn.metrics import make_scorer
 from sklearn.model_selection import ParameterGrid
 from xgboost import XGBRegressor
 
+import src.features.preprocess_train_data as Preprocess_trainData
+import src.features.preprocessing_predicted_data as Preprocessing_PredictedData
 import mlflow
 import pandas as pd
 import pickle
-import src.Mlflow.mlflow_log as mlog
-import src.features.preprocess_train_data as preprocess_train_data
-import src.features.preprocessing_predicted_data as preprocessing_predicted_data
-
-
+import src.Mlflow_src.mlflow_log as mlog
 
 parameters_: Dict[str, List[Optional[float]]] = {
     "objective": ["reg:squarederror"],
@@ -75,7 +76,7 @@ class XGBRegressorWrapper:
         Returns:
             Tuple containing the preprocessed data and transformers.
         """
-        return preprocess_train_data.preprocessing_data(
+        return Preprocess_trainData.preprocessing_data(
             raw_df, with_duration=with_duration
         )
 
@@ -165,9 +166,6 @@ class XGBRegressorWrapper:
         """
         joblib.dump(self.model, filename)
 
-        # Log the model in MLflow
-        mlflow.sklearn.log_model(self.model, "xgboost_model")
-
     def predict_(self, X: pd.DataFrame) -> np.ndarray:
         """
         Make predictions using the trained model.
@@ -178,7 +176,7 @@ class XGBRegressorWrapper:
         Returns:
             Array of predictions.
         """
-        X_transform = preprocessing_predicted_data.preprocessing_pipeline(
+        X_transform = Preprocessing_PredictedData.preprocessing_pipeline(
             X, self.ct_data_transformer, with_duration=WITH_DURATION
         )
         return self.model.predict(X_transform)
@@ -226,11 +224,21 @@ def mean_absolute_percentage_error(y_test: np.ndarray, y_pred: np.ndarray) -> fl
 
 scorer = make_scorer(rmsle)
 
-# Chargement du fichier YAML
-yaml_file_path = "mlflow_predict.yaml"
+
+
+
+" Entrainement"
+
+# 2_Init
 import yaml
+
+yaml_file_path = "mlflow_predict.yaml"
+
+
+# Charger le contenu du fichier YAML
 with open(yaml_file_path, "r") as yaml_file:
     workflow = yaml.safe_load(yaml_file)
+
 # Extraire les valeurs des paramètres
 generateName = workflow["metadata"]["generateName"]
 entrypoint = workflow["spec"]["entrypoint"]
@@ -246,30 +254,18 @@ image = workflow["spec"]["templates"][0]["container"]["image"]
 
 " charger les données  depuis minio par le lien "
 raw_data = pd.read_parquet(link)[50:]
+raw_data
 
-# Chargement des données brutes
-# ...
+# Load model as a PyFuncModel.
 
-# Instance de la classe XGBRegressorWrapper
-models = XGBRegressorWrapper(raw_data, with_duration=False)
+Experience_Name="Final_Experiment"
+# Instance notre classe de models
+models=XGBRegressorWrapper(raw_data,with_duration=False)
 
-num_app = 1
+num_app=1
+" Archirver nos entrainements sur Mlflow"
+import src.Mlflow_src.mlflow_log as mlog
+mlog.mlflow_fun(models,Experience_Name,num_app)
 
-experiment_name = "Nouvelle_Experience_main4"
-mlflow.create_experiment(experiment_name)
 
-# Sauvegarde du ct_transformer
-joblib.dump(models.ct_data_transformer, "ct_transformer.pkl")
-mlflow.log_artifact("ct_transformer.pkl")
 
-# Archivage des entraînements sur MLflow
-# Archivage des entraînements sur MLflow
-for params in models.param_Combination:
-    if mlflow.active_run():
-           mlflow.end_run()
-    with mlflow.start_run(experiment_id=mlflow.get_experiment_by_name(experiment_name).experiment_id):
-        models.train_model(params)
-        eval_metrics = models.evaluate_model()
-        mlflow.log_params(params)
-        mlflow.log_metrics(eval_metrics)
-        mlflow.sklearn.log_model(models.model, "xgboost_model")

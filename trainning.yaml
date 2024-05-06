@@ -1,0 +1,37 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: mlflow-training-
+spec:
+  schedule: "0 0 * * 0"  # Exécuter chaque dimanche à minuit
+  entrypoint: mlflow-training
+  templates:
+    - name: mlflow-training
+      inputs:
+        parameters:
+          - name: objective
+            value: ["reg:squarederror"]
+          - name: learning_rates
+            value: [0.03, 0.05, 0.07]
+          - name: max_depths
+            value: [5, 6, 7]
+          - name: min_child_weights
+            value: [3, 4]
+          - name: subsamples
+            value: [0.7, 0.8, 0.9]
+          - name: colsample_bytrees
+            value: [0.7]
+          - name: n_estimators
+            value: [500, 1000, 2800]
+      script:
+        image: yeson54/cine-insights:latest
+        command: ["/bin/bash", "-c"]
+        source: |
+          apt-get -y update && \
+          apt-get install -y python3-pip && \
+          pip install mlflow && \
+          mkdir -p /home/cine_insights/src && \
+          cp /src/main.py /home/cine_insights/src/main.py && \
+          cp /src/script.py /home/cine_insights/src/script.py && \
+          cd /home/cine_insights && \
+          python3 script.py
